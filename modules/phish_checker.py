@@ -1,9 +1,4 @@
-"""
-Rule-based phishing URL analyzer.
-Checks for raw IPs, URL shorteners, suspicious keywords, and typosquatting.
-"""
 import math
-from collections import Counter
 from urllib.parse import urlparse
 
 # Common URL shorteners used in phishing
@@ -34,9 +29,9 @@ def analyze_url(url):
         alerts.append("Host is a raw IP address, not a domain name.")
         risk_score += 40
 
-    # 2. Check for URL shorteners
-    if domain in SHORTENERS:
-        alerts.append(f"Uses a known URL shortener ({domain}), hiding the true destination.")
+    # 2. Check for URL shorteners (checks if shortener is anywhere in the domain)
+    if any(shortener in domain for shortener in SHORTENERS):
+        alerts.append("Uses a known URL shortener, hiding the true destination.")
         risk_score += 30
 
     # 3. Check for excessive subdomains (e.g., login.secure.update.paypal.com.evil.com)
@@ -44,9 +39,9 @@ def analyze_url(url):
         alerts.append("Excessive subdomains detected (common obfuscation tactic).")
         risk_score += 20
 
-    # 4. Brand impersonation check (Simple string matching)
+    # 4. Brand impersonation check
     for brand in TARGET_BRANDS:
-        if brand in domain and not domain.endswith(f"{brand}.com"):
+        if brand in domain and not domain.endswith(f"{brand}.com") and not domain.endswith(f"{brand}.co.bw"):
             alerts.append(f"Potential brand impersonation detected: mentions '{brand}' but isn't the official domain.")
             risk_score += 30
 

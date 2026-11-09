@@ -1,10 +1,12 @@
 # SOC Log Triage & Phishing Analyzer Toolkit
 
+![Toolkit Demo](assets/demo.png)
+
 A lightweight, Python-based Command Line Interface (CLI) designed for SOC Tier-1 analysts. This toolkit automates the initial triage of Linux authentication logs, performs heuristic analysis on suspicious URLs, and monitors file integrity.
 
 All log detections are mapped to **ISO/IEC 27001:2022** controls to align technical operations with compliance requirements.
 
-## 🛠️ Features
+## Features
 
 ### 1. Log Triage (`triage`)
 

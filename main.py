@@ -2,7 +2,8 @@ import click
 from datetime import datetime
 from modules.parser import parse_log
 from modules.rules import run_all_rules
-from modules.phish_checker import analyze_url # NEW IMPORT
+from modules.phish_checker import analyze_url 
+from modules.fim import create_baseline, audit_directory
 
 @click.group()
 def cli():
@@ -45,6 +46,34 @@ def analyze_url_cmd(url):
             click.echo(f"  - {alert}")
     else:
         click.echo("\n[+] No obvious phishing indicators found.")
+@cli.command()
+@click.option("--dir", required=True, help="Directory to monitor.")
+@click.option("--action", type=click.Choice(['baseline', 'audit']), required=True, help="Create baseline or run audit.")
+def fim(dir, action):
+    """File Integrity Monitor: detect unauthorized changes to files."""
+    if action == 'baseline':
+        click.echo(f"[*] Creating baseline for: {dir}")
+        create_baseline(dir)
+        click.echo("[+] Baseline created and saved to baseline.json")
+    elif action == 'audit':
+        click.echo(f"[*] Auditing directory: {dir}")
+        results = audit_directory(dir)
+        
+        if "error" in results:
+            click.echo(f"[!] {results['error']}")
+            return
+            
+        click.echo("\n[+] Audit Complete:")
+        click.echo(f"  - Modified files: {len(results['modified'])}")
+        click.echo(f"  - Created files: {len(results['created'])}")
+        click.echo(f"  - Deleted files: {len(results['deleted'])}\n")
+        
+        for file in results['modified']:
+            click.echo(f"  [WARNING] Modified: {file}")
+        for file in results['created']:
+            click.echo(f"  [WARNING] Created: {file}")
+        for file in results['deleted']:
+            click.echo(f"  [WARNING] Deleted: {file}")
 
 if __name__ == "__main__":
     cli()

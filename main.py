@@ -74,6 +74,30 @@ def fim(dir, action):
             click.echo(f"  [WARNING] Created: {file}")
         for file in results['deleted']:
             click.echo(f"  [WARNING] Deleted: {file}")
-
+@cli.command()
+@click.option("--log", default="samples/sample_auth.log", help="Log file to triage.")
+@click.option("--dir", default="test_dir", help="Directory to audit.")
+def run_all(log, dir):
+    """Run Log Triage, URL Analysis, and FIM Audit in one go."""
+    click.echo("=========================================")
+    click.echo("      Starting SOC Toolkit Master Run    ")
+    click.echo("=========================================\n")
+    
+    # 1. Triage
+    click.echo("[*] Running Log Triage...")
+    events = parse_log(log)
+    alerts = run_all_rules(events)
+    write_report(log, events, alerts, "report.md")
+    click.echo(f"[+] Triage complete. {len(alerts)} alerts saved to report.md\n")
+    
+    # 2. FIM
+    click.echo(f"[*] Running FIM Audit on {dir}...")
+    results = audit_directory(dir)
+    if "error" in results:
+        click.echo(f"[!] FIM Error: {results['error']}\n")
+    else:
+        click.echo(f"[+] FIM complete. Modified files: {len(results['modified'])}\n")
+        
+    click.echo("[+] Master run finished. Review report.md for details.")
 if __name__ == "__main__":
     cli()

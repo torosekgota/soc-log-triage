@@ -1,15 +1,12 @@
-"""
-SOC Log Triage CLI — parses auth logs, runs detection rules,
-outputs a Markdown incident report.
-"""
 import click
 from datetime import datetime
 from modules.parser import parse_log
 from modules.rules import run_all_rules
+from modules.phish_checker import analyze_url # NEW IMPORT
 
 @click.group()
 def cli():
-    """SOC Log Triage Toolkit."""
+    """SOC Log Triage & Phishing Analyzer Toolkit."""
     pass
 
 @cli.command()
@@ -17,50 +14,37 @@ def cli():
 @click.option("--output", default="report.md", help="Output Markdown report path.")
 def triage(log, output):
     """Parse log, run detections, write Markdown report."""
+    # ... (leave your existing triage code exactly as it is) ...
     click.echo(f"[*] Parsing {log} ...")
     events = parse_log(log)
     click.echo(f"[*] Parsed {len(events)} events.")
-
     click.echo("[*] Running detection rules ...")
     alerts = run_all_rules(events)
     click.echo(f"[*] {len(alerts)} alert(s) generated.")
-
     write_report(log, events, alerts, output)
     click.echo(f"[+] Report written to {output}")
 
 def write_report(log_path, events, alerts, output_path):
-    lines = []
-    lines.append("# SOC Log Triage Report")
-    lines.append(f"\n**Log file:** `{log_path}`  ")
-    lines.append(f"**Generated:** {datetime.now().isoformat()}  ")
-    lines.append(f"**Events parsed:** {len(events)}  ")
-    lines.append(f"**Alerts:** {len(alerts)}\n")
+    # ... (leave your existing write_report code exactly as it is) ...
+    # Just keep the function as it was in your previous code
+    pass # Replace this pass with your actual code if you are copying this manually
 
-    lines.append("## ISO/IEC 27001 Mapping")
-    lines.append("All detections map to **Control A.8.16 — Monitoring Activities**.\n")
-
-    lines.append("## Alerts\n")
-    if not alerts:
-        lines.append("_No alerts triggered._\n")
+# NEW COMMAND HERE
+@cli.command()
+@click.option("--url", required=True, help="Suspicious URL to analyze.")
+def analyze_url_cmd(url):
+    """Analyze a URL for phishing indicators."""
+    click.echo(f"[*] Analyzing: {url}")
+    result = analyze_url(url)
+    
+    click.echo(f"\n[!] Risk Score: {result['risk_score']}/100 ({result['severity']} severity)")
+    
+    if result['alerts']:
+        click.echo("\n[!] Findings:")
+        for alert in result['alerts']:
+            click.echo(f"  - {alert}")
     else:
-        for i, a in enumerate(alerts, 1):
-            lines.append(f"### Alert {i}: {a['rule']}")
-            lines.append(f"- **Severity:** {a['severity']}")
-            lines.append(f"- **IP:** `{a['ip']}`")
-            lines.append(f"- **User:** `{a['user']}`")
-            lines.append(f"- **Timestamp:** {a['timestamp']}")
-            lines.append(f"- **Detail:** {a['detail']}\n")
-
-    lines.append("## Recommendations\n")
-    if any(a["severity"] == "CRITICAL" for a in alerts):
-        lines.append("- **Immediate:** Block offending IPs at the firewall.")
-        lines.append("- **Immediate:** Force password reset for compromised accounts.")
-        lines.append("- **Short-term:** Enable MFA on SSH; disable password auth.")
-    lines.append("- **Ongoing:** Review auth logs daily; tune detection thresholds.")
-    lines.append("- **Ongoing:** Correlate with SIEM (Splunk/Wazuh) for centralized monitoring.\n")
-
-    with open(output_path, "w") as f:
-        f.write("\n".join(lines))
+        click.echo("\n[+] No obvious phishing indicators found.")
 
 if __name__ == "__main__":
     cli()
